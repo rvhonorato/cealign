@@ -22,14 +22,15 @@ cargo install --path .
 ## Usage
 
 ```bash
-$ cealign -m data/2oob_A.pdb -t data/2oob_B.pdb
-[2024-07-25T14:07:24Z INFO  cealign] Starting protein structure alignment
-[2024-07-25T14:07:24Z INFO  cealign::ce] Initial RMSD (full): 4.978
-[2024-07-25T14:07:24Z INFO  cealign::ce] Initial RMSD (fragment): 4.931
-[2024-07-25T14:07:24Z INFO  cealign::ce] Final RMSD (fragment): 5.794
-[2024-07-25T14:07:24Z INFO  cealign::ce] Final RMSD (full): 3.967
-[2024-07-25T14:07:24Z INFO  cealign] Alignment complete, took: 22.594718ms
-[2024-07-25T14:07:24Z INFO  cealign] Alignment process completed successfully
+$ cealign -m data/2oob_A.pdb -t data/2oob_B.pdb --randomize
+[2024-07-25T14:12:22Z INFO  cealign] Starting protein structure alignment
+[2024-07-25T14:12:22Z WARN  cealign] Randomly rotating structures for development purposes
+[2024-07-25T14:12:22Z INFO  cealign::ce] Initial RMSD (full): 6.948
+[2024-07-25T14:12:22Z INFO  cealign::ce] Initial RMSD (fragment): 6.954
+[2024-07-25T14:12:22Z INFO  cealign::ce] Final RMSD (fragment): 5.794
+[2024-07-25T14:12:22Z INFO  cealign::ce] Final RMSD (full): 3.967
+[2024-07-25T14:12:22Z INFO  cealign] Alignment complete, took: 17.044962ms
+[2024-07-25T14:12:22Z INFO  cealign] Alignment process completed successfully
 ```
 
 ```text
