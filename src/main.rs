@@ -69,7 +69,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    // let (mut pdb_j, _errors) = pdbtbx::open(&args.target, pdbtbx::StrictnessLevel::Medium).unwrap();
     let mut pdb_j = match pdbtbx::open(&args.target, pdbtbx::StrictnessLevel::Medium) {
         Ok((pdb, _warnings)) => pdb,
         Err(e) => {
