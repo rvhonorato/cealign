@@ -21,7 +21,7 @@ cargo install --path .
 
 ## Usage
 
-```bash
+```text
 $ cealign -m data/2oob_A.pdb -t data/2oob_B.pdb --randomize
 [2024-07-25T14:12:22Z INFO  cealign] Starting protein structure alignment
 [2024-07-25T14:12:22Z WARN  cealign] Randomly rotating structures for development purposes
