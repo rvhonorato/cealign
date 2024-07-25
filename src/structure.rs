@@ -114,6 +114,16 @@ impl Geometry for pdbtbx::PDB {
     }
 }
 
+pub trait Validations {
+    fn is_multimodel(&self) -> bool;
+}
+
+impl Validations for pdbtbx::PDB {
+    fn is_multimodel(&self) -> bool {
+        self.models().count() > 1
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Point {
     pub x: f64,

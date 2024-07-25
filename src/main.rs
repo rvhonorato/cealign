@@ -8,6 +8,7 @@ use log::{debug, error, info, warn};
 use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
+use structure::Validations;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -63,7 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pdb_i = match pdbtbx::open(&args.mobile, pdbtbx::StrictnessLevel::Medium) {
         Ok((pdb, _warnings)) => pdb,
         Err(e) => {
-            error!("Error opening PDB file: {:?}", e);
+            error!("Error opening PDB file {:?}: {:?}", args.mobile, e);
             exit(1)
         }
     };
@@ -72,10 +73,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pdb_j = match pdbtbx::open(&args.target, pdbtbx::StrictnessLevel::Medium) {
         Ok((pdb, _warnings)) => pdb,
         Err(e) => {
-            error!("Error opening PDB file: {:?}", e);
+            error!("Error opening PDB file {:?}: {:?}", args.target, e);
             exit(1)
         }
     };
+
+    // Apply validations
+    if pdb_i.is_multimodel() || pdb_j.is_multimodel() {
+        error!("Multimodel PDB files are not supported");
+        exit(1);
+    }
 
     if args.randomize {
         warn!("Randomly rotating structures for development purposes");
