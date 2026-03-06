@@ -2,45 +2,26 @@
 
 [![ci](https://github.com/rvhonorato/cealign/actions/workflows/ci.yml/badge.svg)](https://github.com/rvhonorato/cealign/actions/workflows/ci.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/7a1c7929f01e4b5aa4d9c22bf7c704ee)](https://app.codacy.com/gh/rvhonorato/cealign/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![crates.io](https://img.shields.io/crates/v/cealign.svg)](https://crates.io/crates/cealign)
+[![docs.rs](https://docs.rs/cealign/badge.svg)](https://docs.rs/cealign)
 
-A command-line application implementing the [Combinatorial Extension Algorithm](https://doi.org/10.1093/protein/11.9.739) (`cealign`) for protein alignment, written in Rust.
-
-## Description
-
-`cealign` is a command-line tool that uses the Combinatorial Extension (CE) algorithm to align two protein structures. The CE algorithm is known for its effectiveness in structural alignment of proteins, especially when dealing with proteins that have low sequence similarity but similar structural features.
-
-## Implementations
-
-This algorithm is also implemented in [PyMol](https://pymolwiki.org/index.php/Cealign) and in [biopython](https://biopython.org/docs/dev/api/Bio.PDB.cealign.html) via `Bio.PDB.cealign`.
-
-
-## Installation
-
-```bash
-cargo install cealign
-```
-
-To include the optional alignment path plot feature:
-
-```bash
-cargo install cealign --features plot
-```
-
-> The `plot` feature requires `libfontconfig` on Linux (`sudo apt-get install libfontconfig-dev`).
+A Rust implementation of the [Combinatorial Extension (CE) algorithm](https://doi.org/10.1093/protein/11.9.739) for protein structure alignment, available as both a command-line tool and a library.
 
 ## Usage
+
+### CLI
 
 ```
 Usage: cealign [OPTIONS] -m <MOBILE> -t <TARGET>
 
 Options:
-  -m <MOBILE>      Path to the mobile structure
-  -t <TARGET>      Path to the target structure
-  -o, --output     Save aligned structures as PDB files; they will be saved in the current directory as `<name>_aln.pdb`
-  -v, --verbose    Increase output verbosity
-  -r, --randomize  Randomly rotate both the mobile and the target for development/debug purposes
-  -h, --help       Print help
-  -V, --version    Print version
+  -m <MOBILE>   Path to the mobile structure
+  -t <TARGET>   Path to the target structure
+  -o, --output  Save aligned structures as PDB files (`<name>_aln.pdb`)
+  -v, --verbose Increase output verbosity
+  -p, --plot    Save the alignment path plot as plot.png [requires --features plot]
+  -h, --help    Print help
+  -V, --version Print version
 ```
 
 Align two structures and print the RMSD:
@@ -61,6 +42,43 @@ Save the alignment path plot (requires `--features plot`):
 cealign -m mobile.pdb -t target.pdb -p
 ```
 
+### Library
+
+```rust
+use cealign::ce;
+
+let (mobile, _) = pdbtbx::open("mobile.pdb").unwrap();
+let (target, _) = pdbtbx::open("target.pdb").unwrap();
+
+let (aligned_mobile, reference, rmsd, n_aligned) = ce::align(mobile, target, false);
+println!("{:.3}", rmsd);
+```
+
+## Installation
+
+### CLI
+
+```bash
+cargo install cealign
+```
+
+To include the optional alignment path plot feature:
+
+```bash
+cargo install cealign --features plot
+```
+
+> The `plot` feature requires `libfontconfig` on Linux (`sudo apt-get install libfontconfig-dev`).
+
+### Library
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+cealign = "0.1"
+```
+
 ## Example
 
 Align crambin X-ray structure ([1CRN](https://www.rcsb.org/structure/1CRN)) against the first NMR model of ([1CCM](https://www.rcsb.org/structure/1CCM)).
@@ -79,7 +97,7 @@ awk '/^MODEL/ && $2==1{p=1} p; /^ENDMDL/ && p{p=0}' 1ccm_full.pdb > 1ccm_1.pdb
 cealign -m 1crn.pdb -t 1ccm_1.pdb
 ```
 
-Expected output (RMSD in Å over the aligned CA atoms):
+Expected output (RMSD in Å over the aligned Cα atoms):
 
 ```
 1.331
@@ -97,12 +115,6 @@ cealign -m 1crn.pdb -t 1ccm_1.pdb -v -o -p
 [DEBUG cealign::ce] find_path: 20 candidate paths in buffer
 [DEBUG cealign::ce] Candidate path: 5 AFPs (40 residues), aligned RMSD = 1.331
 ...
-[DEBUG cealign::ce] Best AFP: [35, 41, 49, 56, 61, 72, 78, 86] -> [35, 41, 49, 56, 61, 72, 78, 86]
-[DEBUG cealign::ce] Best AFP: [97, 105, 112, 118, 129, 137, 144, 148] -> [97, 105, 112, 118, 129, 137, 144, 148]
-[DEBUG cealign::ce] Best AFP: [155, 162, 171, 176, 184, 190, 195, 202] -> [155, 162, 171, 176, 184, 190, 195, 202]
-[DEBUG cealign::ce] Best AFP: [214, 221, 225, 231, 239, 247, 255, 262] -> [214, 221, 225, 231, 239, 247, 255, 262]
-[DEBUG cealign::ce] Best AFP: [266, 271, 278, 284, 291, 295, 303, 315] -> [266, 271, 278, 284, 291, 295, 303, 315]
-[INFO  cealign::ce] Initial RMSD (fragment): 22.629
 [INFO  cealign::ce] Final RMSD (aligned CA, 40 residues): 1.331
 [INFO  cealign::ce] Final RMSD (full): 1.921
 1.331
@@ -112,4 +124,19 @@ Saved: 1crn_aln.pdb and 1ccm_1_aln.pdb
 
 The alignment path plot (`plot.png`) shows each AFP as a diagonal segment on a residue-index grid, mirroring Figure 2 from [Shindyalov & Bourne (1998)](https://doi.org/10.1093/protein/11.9.739):
 
-![Alignment path plot](assets/plot.png)
+![Alignment path plot](https://raw.githubusercontent.com/rvhonorato/cealign/refs/heads/main/assets/plot.png)
+
+## Limitations
+
+- Single-model PDB files only — multi-model NMR ensembles must be split before use
+- Alignment is performed on Cα atoms; all heavy atoms are transformed using the resulting rotation and translation
+
+## See Also
+
+- [PyMOL cealign](https://pymolwiki.org/index.php/Cealign)
+- [Biopython Bio.PDB.cealign](https://biopython.org/docs/dev/api/Bio.PDB.cealign.html)
+- [Shindyalov & Bourne (1998)](https://doi.org/10.1093/protein/11.9.739) — original CE algorithm paper
+
+## License
+
+[0BSD](LICENSE)
