@@ -7,9 +7,7 @@ use std::collections::HashMap;
 use std::process::exit;
 
 pub trait Geometry {
-    fn apply_rotation(&mut self, rotation_matrix: &Matrix3<f64>);
     fn randomly_rotate(&mut self);
-    fn calculate_centroid(&self) -> Vector3<f64>;
     fn apply_rotation_and_translation(
         &mut self,
         rotation_matrix: &Matrix3<f64>,
@@ -18,47 +16,6 @@ pub trait Geometry {
 }
 
 impl Geometry for pdbtbx::PDB {
-    fn calculate_centroid(&self) -> Vector3<f64> {
-        let mut sum = Vector3::zeros();
-        let mut count = 0;
-
-        for atom in self.atoms() {
-            sum += Vector3::new(atom.x(), atom.y(), atom.z());
-            count += 1;
-        }
-
-        if count > 0 {
-            sum / count as f64
-        } else {
-            Vector3::zeros()
-        }
-    }
-
-    fn apply_rotation(&mut self, rotation_matrix: &Matrix3<f64>) {
-        // Calculate the centroid
-        // let centroid = self.calculate_centroid();
-
-        // Apply rotation around the centroid
-        for atom in self.atoms_mut() {
-            let point = Vector3::new(atom.x(), atom.y(), atom.z());
-
-            // Move to origin
-            // let centered_point = point - centroid;
-
-            // Apply rotation
-            // let rotated_point = rotation_matrix * centered_point;
-            let final_point = rotation_matrix * point;
-
-            // Move back from origin
-            // let final_point = rotated_point + centroid;
-
-            // Update atom coordinates
-            let _ = atom.set_x(final_point.x);
-            let _ = atom.set_y(final_point.y);
-            let _ = atom.set_z(final_point.z);
-        }
-    }
-
     fn apply_rotation_and_translation(
         &mut self,
         rotation_matrix: &Matrix3<f64>,
@@ -166,24 +123,6 @@ impl Validations for pdbtbx::PDB {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Point {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-}
-
-// Calculate an all-vs-all distance
-// pub fn calc_distance_matrix(pdb: &pdbtbx::PDB) -> Vec<Vec<f64>> {
-//     pdb.atoms()
-//         .map(|atom1| {
-//             pdb.atoms()
-//                 .map(|atom2| atom1.distance(atom2))
-//                 .collect::<Vec<f64>>()
-//         })
-//         .collect::<Vec<Vec<f64>>>()
-// }
-
 pub fn calc_distance_matrix(pdb: &pdbtbx::PDB) -> HashMap<usize, HashMap<usize, f64>> {
     pdb.atoms()
         .map(|atom1| {
@@ -229,88 +168,65 @@ pub fn create_coordinate_vectors(
     (P, Q)
 }
 
-// pub fn calc_s(
-//     d1: &[Vec<f64>],
-//     d2: &[Vec<f64>],
-//     len_a: usize,
-//     len_b: usize,
-//     win_size: usize,
-// ) -> Vec<Vec<f64>> {
-//     let sum_size = ((win_size - 1) * (win_size - 2)) as f64 / 2.0;
-
-//     let mut s = vec![vec![-1.0; len_b]; len_a];
-
-//     for i_a in 0..len_a {
-//         for i_b in 0..len_b {
-//             if i_a > len_a - win_size || i_b > len_b - win_size {
-//                 continue;
-//             }
-
-//             let mut score = 0.0;
-
-//             for row in 0..win_size - 2 {
-//                 for col in row + 2..win_size {
-//                     score += (d1[i_a + row][i_a + col] - d2[i_b + row][i_b + col]).abs();
-//                 }
-//             }
-
-//             s[i_a][i_b] = score / sum_size;
-//         }
-//     }
-
-//     s
-// }
-
 pub fn calc_s(
     d1: &HashMap<usize, HashMap<usize, f64>>,
     d2: &HashMap<usize, HashMap<usize, f64>>,
     win_size: usize,
 ) -> HashMap<(usize, usize), f64> {
-    // FIXME: This function is not working as expected
+    let mut serials_a: Vec<usize> = d1.keys().cloned().collect();
+    serials_a.sort_unstable();
+    let mut serials_b: Vec<usize> = d2.keys().cloned().collect();
+    serials_b.sort_unstable();
 
-    // let sum_size = ((win_size - 1) * (win_size - 2)) as f64 / 2.0;
+    let len_a = serials_a.len();
+    let len_b = serials_b.len();
+
+    // Number of distance pairs per window: all (row, col) with col >= row + 2.
+    // Matches the normalization from the original Vec-based implementation.
+    let sum_size = ((win_size - 1) * (win_size - 2)) as f64 / 2.0;
+
     let mut scores = HashMap::new();
 
-    debug!("d1: {:?}", d1);
-    debug!("d2: {:?}", d2);
+    for i_a in 0..len_a {
+        if i_a + win_size > len_a {
+            break;
+        }
+        for i_b in 0..len_b {
+            if i_b + win_size > len_b {
+                break;
+            }
 
-    for (&atom_i, distances_i) in d1 {
-        for (&atom_j, distances_j) in d2 {
             let mut score = 0.0;
-            let mut valid_comparisons = 0;
 
-            for (&a, &dist_a) in distances_i {
-                if let Some(&dist_b) = distances_j.get(&a) {
-                    if a > atom_i && a < atom_i + win_size && a > atom_j && a < atom_j + win_size {
-                        score += (dist_a - dist_b).abs();
-                        valid_comparisons += 1;
-                    }
+            for row in 0..win_size - 2 {
+                for col in row + 2..win_size {
+                    let sa_row = serials_a[i_a + row];
+                    let sa_col = serials_a[i_a + col];
+                    let sb_row = serials_b[i_b + row];
+                    let sb_col = serials_b[i_b + col];
+
+                    let dist_a = d1[&sa_row][&sa_col];
+                    let dist_b = d2[&sb_row][&sb_col];
+
+                    score += (dist_a - dist_b).abs();
                 }
             }
 
-            if valid_comparisons > 0 {
-                scores.insert((atom_i, atom_j), score / valid_comparisons as f64);
-            }
+            scores.insert((serials_a[i_a], serials_b[i_b]), score / sum_size);
         }
     }
-
-    debug!("scores: {:?}", scores);
 
     scores
 }
 
 pub fn calc_rmsd(receptor: &pdbtbx::PDB, ligand: &pdbtbx::PDB) -> f64 {
-    // The receptor does not move, so we don't need to calculate over it,
-    // then the RMSD here is the L-RMSD
-
-    // Calculate the sum of squared distances between corresponding atoms
     let n = receptor.atoms().count();
-    let sum_squared_distances = ligand
+    let sum_sq = ligand
         .atoms()
         .zip(receptor.atoms())
-        .map(|(atom1, atom2)| atom1.distance(atom2))
+        .map(|(a, b)| a.distance(b).powi(2))
         .sum::<f64>();
-    (sum_squared_distances / n as f64).sqrt()
+    (sum_sq / n as f64).sqrt()
 }
 
 pub fn centroid(points: &[Vector3<f64>]) -> Vector3<f64> {

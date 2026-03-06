@@ -91,7 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Take note of how long it took
     let start = Instant::now();
-    let (pdb_i_aln, pdb_j_aln) = ce::align(pdb_i, pdb_j);
+    let (pdb_i_aln, pdb_j_aln, _, _) = ce::align(pdb_i, pdb_j);
     let duration = start.elapsed();
     info!("Alignment complete, took: {:?}", duration);
 
