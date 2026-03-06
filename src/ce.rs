@@ -1,15 +1,14 @@
 use crate::structure;
-// use crate::visualization;
-use std::collections::HashMap;
-use std::collections::HashSet;
-
 use crate::structure::Geometry;
+use crate::visualization;
 use log::{debug, info};
+use std::collections::{HashMap, HashSet};
 
 // Compute the inter-AFP distance D_ij (Equation 6, independent set) between
 // an AFP already in the path at index `path_i`/`path_j` and a candidate AFP
 // at index `j_a`/`j_b`. Uses the anti-diagonal pattern so each residue
 // appears exactly once. Matches the inner loop in ccealignmodule.c findPath().
+#[allow(clippy::too_many_arguments)]
 fn inter_afp_distance(
     da: &HashMap<usize, HashMap<usize, f64>>,
     db: &HashMap<usize, HashMap<usize, f64>>,
@@ -43,6 +42,7 @@ fn inter_afp_distance(
 //   - winCache / allScoreBuffer / tIndex for the weighted total-score formula
 //   - ring buffer of up to 20 best paths
 //   - starting AFP requires S < D0; candidate AFPs require S <= D0
+#[allow(unused_assignments)]
 fn find_path(
     da: &HashMap<usize, HashMap<usize, f64>>,
     db: &HashMap<usize, HashMap<usize, f64>>,
@@ -80,8 +80,8 @@ fn find_path(
     // Ring buffer of up to MAX_KEPT paths (mirrors pathBuffer in C reference)
     let mut buffer_index = 0usize;
     let mut buffer_size = 0usize;
-    let mut len_buffer = vec![0usize; MAX_KEPT];
-    let mut score_buffer = vec![1e6f64; MAX_KEPT];
+    let mut len_buffer = [0usize; MAX_KEPT];
+    let mut score_buffer = [1e6f64; MAX_KEPT];
     let mut path_buffer: Vec<Vec<(usize, usize)>> = vec![Vec::new(); MAX_KEPT];
 
     // Shared state across all (iA, iB) starting points — mirrors allScoreBuffer
@@ -92,10 +92,8 @@ fn find_path(
     let mut t_index = vec![0usize; smaller + 1];
 
     for i_a in 0..len_a {
-        if best_path_length > 1 {
-            if i_a > len_a.saturating_sub(win_size * (best_path_length - 1)) {
-                break;
-            }
+        if best_path_length > 1 && i_a > len_a.saturating_sub(win_size * (best_path_length - 1)) {
+            break;
         }
 
         for i_b in 0..len_b {
@@ -104,14 +102,13 @@ fn find_path(
 
             // Starting AFP: strictly < D0  (C: `if (S[iA][iB] >= D0) continue`)
             let s0 = match s.get(&(sa0, sb0)) {
-                Some(&v) if v >= 0.0 && v < D0 => v,
+                Some(&v) if (0.0..D0).contains(&v) => v,
                 _ => continue,
             };
 
-            if best_path_length > 1 {
-                if i_b > len_b.saturating_sub(win_size * (best_path_length - 1)) {
-                    break;
-                }
+            if best_path_length > 1 && i_b > len_b.saturating_sub(win_size * (best_path_length - 1))
+            {
+                break;
             }
 
             let mut cur_path = vec![(usize::MAX, usize::MAX); smaller];
@@ -120,15 +117,15 @@ fn find_path(
             t_index[0] = 0;
             let mut cur_total_score = 0.0f64;
 
-            let mut done = false;
-            while !done {
+            loop {
                 let (prev_i, prev_j) = cur_path[cur_path_length - 1];
                 let mut gap_best_score = 1e6f64;
                 let mut gap_best_index: Option<usize> = None;
 
+                #[allow(clippy::needless_range_loop)]
                 for g in 0..(GAP_MAX * 2 + 1) {
-                    let j_a = prev_i + win_size + if (g + 1) % 2 == 0 { (g + 1) / 2 } else { 0 };
-                    let j_b = prev_j + win_size + if (g + 1) % 2 != 0 { (g + 1) / 2 } else { 0 };
+                    let j_a = prev_i + win_size + if (g + 1) % 2 == 0 { g.div_ceil(2) } else { 0 };
+                    let j_b = prev_j + win_size + if (g + 1) % 2 != 0 { g.div_ceil(2) } else { 0 };
 
                     // Bounds: AFP at j_a needs atoms j_a..j_a+win_size-1
                     // (mirrors C: `if (jA > lenA-winSize-1)`)
@@ -143,14 +140,13 @@ fn find_path(
 
                     // Candidate AFP: <= D0  (C: `if (S[jA][jB] > D0) continue`)
                     match s.get(&(sa, sb)) {
-                        Some(&v) if v >= 0.0 && v <= D0 => {}
+                        Some(&v) if (0.0..=D0).contains(&v) => {}
                         _ => continue,
                     }
 
                     // Inter-AFP score against every AFP already in the path
                     let mut cur_score = 0.0f64;
-                    for k in 0..cur_path_length {
-                        let (pi, pj) = cur_path[k];
+                    for &(pi, pj) in cur_path[..cur_path_length].iter() {
                         cur_score += inter_afp_distance(
                             da, db, &serials_a, &serials_b, pi, pj, j_a, j_b, win_size,
                         );
@@ -172,7 +168,7 @@ fn find_path(
                 match gap_best_index {
                     Some(g_best) => {
                         // Reconstruct (gA, gB) indices for the best candidate AFP.
-                        let j_gap = (g_best + 1) / 2;
+                        let j_gap = g_best.div_ceil(2);
                         let (g_a, g_b) = if (g_best + 1) % 2 == 0 {
                             (prev_i + win_size + j_gap, prev_j + win_size)
                         } else {
@@ -209,7 +205,6 @@ fn find_path(
                         cur_total_score = score2;
 
                         if cur_total_score > D1 {
-                            done = true;
                             break;
                         }
 
@@ -228,10 +223,8 @@ fn find_path(
                         }
                     }
                     None => {
-                        done = true;
-                        if cur_path_length > 0 {
-                            cur_path_length -= 1;
-                        }
+                        cur_path_length = cur_path_length.saturating_sub(1);
+                        break;
                     }
                 }
             }
@@ -249,8 +242,7 @@ fn find_path(
                 };
                 buffer_size = (buffer_size + 1).min(MAX_KEPT);
 
-                let path_copy: Vec<(usize, usize)> =
-                    best_path[..best_path_length].iter().copied().collect();
+                let path_copy: Vec<(usize, usize)> = best_path[..best_path_length].to_vec();
 
                 let store_idx = if buffer_index == 0 && buffer_size == MAX_KEPT {
                     MAX_KEPT - 1
@@ -276,6 +268,7 @@ fn find_path(
 fn calculate_alignment_path(
     pdb_i: &pdbtbx::PDB,
     pdb_j: &pdbtbx::PDB,
+    plot: bool,
 ) -> Vec<(Vec<usize>, Vec<usize>)> {
     let dm_i = structure::calc_distance_matrix(pdb_i);
     let dm_j = structure::calc_distance_matrix(pdb_j);
@@ -294,6 +287,7 @@ fn calculate_alignment_path(
     // RMSD after Kabsch superposition — mirrors the PyMOL Python wrapper that
     // iterates pathBuffer and selects the lowest-RMSD solution.
     let mut best_expanded: Option<Vec<(Vec<usize>, Vec<usize>)>> = None;
+    let mut best_index_path: Option<Vec<(usize, usize)>> = None;
     let mut best_rmsd = f64::MAX;
 
     for path in &candidate_paths {
@@ -334,6 +328,7 @@ fn calculate_alignment_path(
         if rmsd < best_rmsd {
             best_rmsd = rmsd;
             best_expanded = Some(expanded);
+            best_index_path = Some(path.clone());
         }
     }
 
@@ -341,6 +336,18 @@ fn calculate_alignment_path(
     result
         .iter()
         .for_each(|(a, b)| debug!("Best AFP: {:?} -> {:?}", a, b));
+
+    // Generate alignment path plot (Figure 2 style from Shindyalov & Bourne 1998)
+    if plot {
+        if let Some(ref idx_path) = best_index_path {
+            if let Err(e) =
+                visualization::plot(idx_path, window_size, serials_a.len(), serials_b.len())
+            {
+                debug!("Could not write alignment plot: {}", e);
+            }
+        }
+    }
+
     result
 }
 
@@ -383,6 +390,7 @@ fn expand_path(
 pub fn align(
     mut pdb_i: pdbtbx::PDB,
     mut pdb_j: pdbtbx::PDB,
+    plot: bool,
 ) -> (pdbtbx::PDB, pdbtbx::PDB, f64, usize) {
     let rmsd = structure::calc_rmsd(&pdb_i, &pdb_j);
     info!("Initial RMSD (full): {:.3}", rmsd);
@@ -393,10 +401,7 @@ pub fn align(
     pdb_i.remove_atoms_by(|atom| atom.name() != "CA");
     pdb_j.remove_atoms_by(|atom| atom.name() != "CA");
 
-    let _ = pdbtbx::save_pdb(&pdb_i, "debug/ca_i.pdb", pdbtbx::StrictnessLevel::Strict);
-    let _ = pdbtbx::save_pdb(&pdb_j, "debug/ca_j.pdb", pdbtbx::StrictnessLevel::Strict);
-
-    let path = calculate_alignment_path(&pdb_i, &pdb_j);
+    let path = calculate_alignment_path(&pdb_i, &pdb_j, plot);
     let n_aligned = path.iter().map(|(a, _)| a.len()).sum::<usize>();
 
     let (P, Q) = structure::create_coordinate_vectors(&path, &pdb_i, &pdb_j);
@@ -424,8 +429,6 @@ pub fn align(
     let pdb_j = pdb_j_all_atoms;
 
     pdb_i.apply_rotation_and_translation(&rotation_matrix, &translation_vector);
-    let _ = pdbtbx::save_pdb(&pdb_i, "debug/mobile.pdb", pdbtbx::StrictnessLevel::Strict);
-    let _ = pdbtbx::save_pdb(&pdb_j, "debug/target.pdb", pdbtbx::StrictnessLevel::Strict);
     let final_rmsd_full = structure::calc_rmsd(&pdb_i, &pdb_j);
     info!("Final RMSD (full): {:.3}", final_rmsd_full);
 
@@ -457,14 +460,15 @@ mod tests {
             let (reference, _) = pdbtbx::open("data/1crn.pdb", pdbtbx::StrictnessLevel::Medium)
                 .expect("Failed to open data/1crn.pdb");
 
-            let (mut mobile, _) = pdbtbx::open(path, pdbtbx::StrictnessLevel::Medium)
+            let (mobile, _) = pdbtbx::open(path, pdbtbx::StrictnessLevel::Medium)
                 .unwrap_or_else(|_| panic!("Failed to open {}", path));
 
             // Add a random rotation
+            let mut mobile = mobile;
             mobile.randomly_rotate();
 
             let rmsd_before = structure::calc_rmsd(&reference, &mobile);
-            let (_, _, rmsd_after, n_aligned) = align(mobile, reference);
+            let (_, _, rmsd_after, n_aligned) = align(mobile, reference, false);
 
             // println!(
             //     "{}: before: {:.3} Å  after (aligned CA, {} res): {:.3} Å  PyMOL: {:.3} Å",

@@ -1,14 +1,12 @@
 mod ce;
 mod structure;
 mod visualization;
-extern crate nalgebra as na;
-use crate::structure::Geometry;
 use clap::Parser;
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
-use structure::Validations;
+use structure::{Geometry, Validations};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -20,8 +18,9 @@ struct Args {
     target: String,
 
     #[arg(
+        short = 'o',
         long = "output",
-        help = "Save aligned structures as PDB files; they will be save in the same directory as `_aln.pdb`",
+        help = "Save aligned structures as PDB files; they will be saved in the current directory as `<name>_aln.pdb`",
         default_value = "false"
     )]
     output: bool,
@@ -35,30 +34,30 @@ struct Args {
     verbose: bool,
 
     #[arg(
+        short = 'r',
         long = "randomize",
-        help = "Randomly rotate both the mobile and the target for developlment/debug purposes",
+        help = "Randomly rotate both the mobile and the target for development/debug purposes",
         default_value = "false"
     )]
     randomize: bool,
+
+    #[arg(
+        short = 'p',
+        long = "plot",
+        help = "Save the alignment path plot as plot.png",
+        default_value = "false"
+    )]
+    plot: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    // Initialize logger
     if args.verbose {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+        debug!("Verbose mode enabled");
     } else {
-        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    }
-
-    info!("Starting protein structure alignment");
-    debug!("Verbose mode enabled");
-
-    // Create a folder called `debug`, to save the intermediary files
-    match std::fs::create_dir_all("debug") {
-        Ok(_) => debug!("Created 'debug' directory"),
-        Err(e) => warn!("Failed to create 'debug' directory: {}", e),
+        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     }
 
     let mut pdb_i = match pdbtbx::open(&args.mobile, pdbtbx::StrictnessLevel::Medium) {
@@ -77,25 +76,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    // Apply validations
     if pdb_i.is_multimodel() || pdb_j.is_multimodel() {
         error!("Multimodel PDB files are not supported");
         exit(1);
     }
 
     if args.randomize {
-        warn!("Randomly rotating structures for development purposes");
+        info!("Randomly rotating structures for development purposes");
         pdb_i.randomly_rotate();
         pdb_j.randomly_rotate();
     }
 
-    // Take note of how long it took
     let start = Instant::now();
-    let (pdb_i_aln, pdb_j_aln, _, _) = ce::align(pdb_i, pdb_j);
-    let duration = start.elapsed();
-    info!("Alignment complete, took: {:?}", duration);
+    let (pdb_i_aln, pdb_j_aln, aligned_rmsd, _) = ce::align(pdb_i, pdb_j, args.plot);
+    let _ = start.elapsed();
 
-    // If output option is set, save the aligned structures
+    println!("{:.3}", aligned_rmsd);
+
+    if args.plot {
+        println!("Saved: plot.png");
+    }
+
     if args.output {
         let mobile_path = Path::new(&args.mobile);
         let target_path = Path::new(&args.target);
@@ -109,13 +110,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = pdbtbx::save_pdb(&pdb_i_aln, &mobile_output, pdbtbx::StrictnessLevel::Strict);
         let _ = pdbtbx::save_pdb(&pdb_j_aln, &target_output, pdbtbx::StrictnessLevel::Strict);
 
-        info!(
-            "Saved aligned structures as {} and {}",
-            mobile_output, target_output
-        );
+        println!("Saved: {} and {}", mobile_output, target_output);
     }
-
-    info!("Alignment process completed successfully");
 
     Ok(())
 }

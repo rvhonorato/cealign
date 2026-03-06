@@ -1,8 +1,6 @@
-use rand::Rng;
-
-extern crate nalgebra as na;
 use log::{debug, error};
-use na::{Matrix3, Vector3};
+use nalgebra::{Matrix3, Vector3};
+use rand::Rng;
 use std::collections::HashMap;
 use std::process::exit;
 
