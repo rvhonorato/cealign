@@ -1,21 +1,32 @@
 [package]
 name = "cealign"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 edition = "2021"
+rust-version = "1.75"
 license = "0BSD"
 authors = ["Rodrigo V. Honorato <rvhonorato@protonmail.com>"]
 description = "Implementation of the Combinatorial Extension (cealign) algorithm to align protein structures"
 repository = "https://github.com/rvhonorato/cealign"
+homepage = "https://github.com/rvhonorato/cealign"
+documentation = "https://docs.rs/cealign"
 readme = "README.md"
 keywords = [
   "bioinformatics",
-  "protein",
-  "structure",
-  "alignment",
-  "computational-biology",
+  "structural-biology",
+  "structural-alignment",
+  "cealign",
 ]
-categories = []
+categories = ["science", "command-line-utilities"]
+exclude = ["data/", "debug/", ".github/"]
 
+
+[lib]
+name = "cealign"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cealign"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }

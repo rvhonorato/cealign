@@ -1,12 +1,10 @@
-mod ce;
-mod structure;
-mod utils;
-mod visualization;
+use cealign::ce;
+use cealign::structure::{Geometry, Validations};
+use cealign::utils;
 use clap::Parser;
 use log::{debug, error, info};
 use std::process::exit;
 use std::time::Instant;
-use structure::{Geometry, Validations};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
