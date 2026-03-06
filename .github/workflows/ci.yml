@@ -38,8 +38,11 @@ jobs:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig-dev
+
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --all-features --verbose
 
   clippy:
     name: clippy
@@ -71,8 +74,11 @@ jobs:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig-dev
+
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all-features -- -D warnings
 
   fmt:
     name: format
