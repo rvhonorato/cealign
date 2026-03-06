@@ -1,5 +1,7 @@
 # cealign
 
+[![ci](https://github.com/rvhonorato/cealign/actions/workflows/ci.yml/badge.svg)](https://github.com/rvhonorato/cealign/actions/workflows/ci.yml)
+
 A command-line application implementing the [Combinatorial Extension Algorithm](https://doi.org/10.1093/protein/11.9.739) (`cealign`) for protein alignment, written in Rust.
 
 ## Description
