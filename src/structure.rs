@@ -4,8 +4,12 @@ use rand::RngExt;
 use std::collections::HashMap;
 use std::process::exit;
 
+/// Geometric operations on a PDB structure.
 pub trait Geometry {
+    /// Apply a random rotation around the X, Y, and Z axes (for testing purposes).
     fn randomly_rotate(&mut self);
+
+    /// Apply a rotation matrix and translation vector to every atom in the structure.
     fn apply_rotation_and_translation(
         &mut self,
         rotation_matrix: &Matrix3<f64>,
@@ -96,6 +100,9 @@ impl Geometry for pdbtbx::PDB {
     }
 }
 
+/// Compute the rotation matrix and translation vector that superimpose `P` onto `Q`.
+///
+/// Returns `(R, t)` such that `R * p + t ≈ q` for each corresponding pair.
 #[allow(non_snake_case)]
 pub fn calculate_transformation(
     P: &[Vector3<f64>],
@@ -111,7 +118,9 @@ pub fn calculate_transformation(
     (rotation_matrix, translation_vector)
 }
 
+/// Structural validation checks on a PDB structure.
 pub trait Validations {
+    /// Returns `true` if the structure contains more than one MODEL record.
     fn is_multimodel(&self) -> bool;
 }
 
@@ -121,6 +130,9 @@ impl Validations for pdbtbx::PDB {
     }
 }
 
+/// Build a pairwise distance matrix for all atoms in `pdb`.
+///
+/// Returns a nested map `serial_i → serial_j → distance_Å`.
 pub fn calc_distance_matrix(pdb: &pdbtbx::PDB) -> HashMap<usize, HashMap<usize, f64>> {
     pdb.atoms()
         .map(|atom1| {
@@ -138,6 +150,11 @@ pub fn calc_distance_matrix(pdb: &pdbtbx::PDB) -> HashMap<usize, HashMap<usize, 
         .collect()
 }
 
+/// Extract paired coordinate vectors from an alignment path.
+///
+/// Given a list of `(serials_a, serials_b)` pairs produced by the CE path
+/// expansion, returns two equal-length vectors `(P, Q)` of 3-D coordinates
+/// ready for Kabsch superposition.
 #[allow(non_snake_case)]
 pub fn create_coordinate_vectors(
     expanded_path: &Vec<(Vec<usize>, Vec<usize>)>,
@@ -166,6 +183,14 @@ pub fn create_coordinate_vectors(
     (P, Q)
 }
 
+/// Compute the CE similarity scores S(i, j) for all AFP starting positions.
+///
+/// For each pair of windows of length `win_size` starting at residue `i` in
+/// structure A and residue `j` in structure B, the score is the mean absolute
+/// difference of the intra-window pairwise distances, excluding nearest
+/// neighbours (|row − col| < 2).
+///
+/// Returns a map `(serial_i, serial_j) → score`.
 pub fn calc_s(
     d1: &HashMap<usize, HashMap<usize, f64>>,
     d2: &HashMap<usize, HashMap<usize, f64>>,
@@ -217,6 +242,10 @@ pub fn calc_s(
     scores
 }
 
+/// Compute the all-atom RMSD between two structures.
+///
+/// Atoms are paired in iteration order; both structures must contain the same
+/// number of atoms.
 pub fn calc_rmsd(receptor: &pdbtbx::PDB, ligand: &pdbtbx::PDB) -> f64 {
     let n = receptor.atoms().count();
     let sum_sq = ligand
@@ -227,10 +256,16 @@ pub fn calc_rmsd(receptor: &pdbtbx::PDB, ligand: &pdbtbx::PDB) -> f64 {
     (sum_sq / n as f64).sqrt()
 }
 
+/// Compute the centroid (mean position) of a set of 3-D points.
 pub fn centroid(points: &[Vector3<f64>]) -> Vector3<f64> {
     points.iter().sum::<Vector3<f64>>() / points.len() as f64
 }
 
+/// Find the optimal rotation matrix that superimposes `P` onto `Q` using the
+/// [Kabsch algorithm](https://en.wikipedia.org/wiki/Kabsch_algorithm).
+///
+/// Both slices must be centred at the origin and have the same length.
+/// Panics (via `exit(1)`) if the slices differ in length or are empty.
 #[allow(non_snake_case)]
 pub fn kabsch(P: &[Vector3<f64>], Q: &[Vector3<f64>]) -> Matrix3<f64> {
     if P.len() != Q.len() || P.is_empty() {
@@ -270,6 +305,9 @@ pub fn kabsch(P: &[Vector3<f64>], Q: &[Vector3<f64>]) -> Matrix3<f64> {
     }
 }
 
+/// Compute the optimal rotation matrix to superimpose `P` onto `Q`.
+///
+/// Centers both point sets before applying the Kabsch algorithm.
 #[allow(non_snake_case)]
 pub fn calculate_rotation_matrix(P: &[Vector3<f64>], Q: &[Vector3<f64>]) -> Matrix3<f64> {
     let centroid_P = centroid(P);

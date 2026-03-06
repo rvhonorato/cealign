@@ -1,5 +1,14 @@
 use std::path::Path;
 
+/// Derive the output filename for an aligned structure.
+///
+/// Strips the directory and extension from `path` and appends `_aln.pdb`.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(cealign::utils::aln_filename("structures/mobile.pdb"), "mobile_aln.pdb");
+/// ```
 pub fn aln_filename(path: &str) -> String {
     let stem = Path::new(path)
         .file_stem()

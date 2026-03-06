@@ -393,7 +393,40 @@ fn expand_path(
         .collect()
 }
 
-// Returns (aligned_mobile, reference, aligned_ca_rmsd, n_aligned_residues)
+/// Align two protein structures using the CE algorithm.
+///
+/// Superimposes `pdb_i` (mobile) onto `pdb_j` (target) and returns the aligned
+/// structures together with the RMSD over the aligned Cα atoms and the number
+/// of aligned residues.
+///
+/// The alignment is performed on Cα atoms only; the resulting rotation and
+/// translation are then applied to all heavy atoms of the mobile structure.
+///
+/// # Arguments
+///
+/// * `pdb_i` - Mobile structure.
+/// * `pdb_j` - Target (reference) structure.
+/// * `plot`  - When `true` **and** the `plot` feature is enabled, writes the
+///   alignment path diagram to `plot.png` in the current directory.
+///
+/// # Returns
+///
+/// `(aligned_mobile, reference, rmsd, n_aligned)`
+///
+/// * `aligned_mobile` — mobile structure after superposition.
+/// * `reference`      — target structure (unchanged).
+/// * `rmsd`           — RMSD in Å over the aligned Cα atoms.
+/// * `n_aligned`      — number of aligned residues.
+///
+/// # Example
+///
+/// ```no_run
+/// let (mobile, _) = pdbtbx::open("mobile.pdb").unwrap();
+/// let (target, _) = pdbtbx::open("target.pdb").unwrap();
+///
+/// let (_aligned, _reference, rmsd, n) = cealign::ce::align(mobile, target, false);
+/// println!("{:.3} Å over {} residues", rmsd, n);
+/// ```
 #[allow(non_snake_case)]
 pub fn align(
     mut pdb_i: pdbtbx::PDB,
