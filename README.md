@@ -16,9 +16,100 @@ This algorithm is also implemented in [PyMol](https://pymolwiki.org/index.php/Ce
 
 ## Installation
 
-_placeholder_
+```bash
+cargo install cealign
+```
+
+To include the optional alignment path plot feature:
+
+```bash
+cargo install cealign --features plot
+```
+
+> The `plot` feature requires `libfontconfig` on Linux (`sudo apt-get install libfontconfig-dev`).
 
 ## Usage
 
-_placeholder_
+```
+Usage: cealign [OPTIONS] -m <MOBILE> -t <TARGET>
 
+Options:
+  -m <MOBILE>      Path to the mobile structure
+  -t <TARGET>      Path to the target structure
+  -o, --output     Save aligned structures as PDB files; they will be saved in the current directory as `<name>_aln.pdb`
+  -v, --verbose    Increase output verbosity
+  -r, --randomize  Randomly rotate both the mobile and the target for development/debug purposes
+  -h, --help       Print help
+  -V, --version    Print version
+```
+
+Align two structures and print the RMSD:
+
+```bash
+cealign -m mobile.pdb -t target.pdb
+```
+
+Save the aligned structures to disk:
+
+```bash
+cealign -m mobile.pdb -t target.pdb -o
+```
+
+Save the alignment path plot (requires `--features plot`):
+
+```bash
+cealign -m mobile.pdb -t target.pdb -p
+```
+
+## Example
+
+Align crambin X-ray structure ([1CRN](https://www.rcsb.org/structure/1CRN)) against the first NMR model of ([1CCM](https://www.rcsb.org/structure/1CCM)).
+
+1CCM is a multi-model NMR ensemble, so we extract model 1 first:
+
+```bash
+# Download structures
+curl -s https://files.rcsb.org/download/1CRN.pdb -o 1crn.pdb
+curl -s https://files.rcsb.org/download/1CCM.pdb -o 1ccm_full.pdb
+
+# Extract model 1 from the NMR ensemble
+awk '/^MODEL/ && $2==1{p=1} p; /^ENDMDL/ && p{p=0}' 1ccm_full.pdb > 1ccm_1.pdb
+
+# Align
+cealign -m 1crn.pdb -t 1ccm_1.pdb
+```
+
+Expected output (RMSD in Å over the aligned CA atoms):
+
+```
+1.331
+```
+
+Full run with verbose logging, alignment output, and plot (requires `--features plot`):
+
+```bash
+cealign -m 1crn.pdb -t 1ccm_1.pdb -v -o -p
+```
+
+```
+[DEBUG cealign] Verbose mode enabled
+[INFO  cealign::ce] Initial RMSD (full): 22.172
+[DEBUG cealign::ce] find_path: 20 candidate paths in buffer
+[DEBUG cealign::ce] Candidate path: 5 AFPs (40 residues), aligned RMSD = 1.331
+...
+[DEBUG cealign::ce] Best AFP: [35, 41, 49, 56, 61, 72, 78, 86] -> [35, 41, 49, 56, 61, 72, 78, 86]
+[DEBUG cealign::ce] Best AFP: [97, 105, 112, 118, 129, 137, 144, 148] -> [97, 105, 112, 118, 129, 137, 144, 148]
+[DEBUG cealign::ce] Best AFP: [155, 162, 171, 176, 184, 190, 195, 202] -> [155, 162, 171, 176, 184, 190, 195, 202]
+[DEBUG cealign::ce] Best AFP: [214, 221, 225, 231, 239, 247, 255, 262] -> [214, 221, 225, 231, 239, 247, 255, 262]
+[DEBUG cealign::ce] Best AFP: [266, 271, 278, 284, 291, 295, 303, 315] -> [266, 271, 278, 284, 291, 295, 303, 315]
+[INFO  cealign::ce] Initial RMSD (fragment): 22.629
+[INFO  cealign::ce] Final RMSD (aligned CA, 40 residues): 1.331
+[INFO  cealign::ce] Final RMSD (full): 1.921
+1.331
+Saved: plot.png
+Saved: 1crn_aln.pdb and 1ccm_1_aln.pdb
+```
+
+The alignment path plot (`plot.png`) shows each AFP as a diagonal segment on a residue-index grid, mirroring Figure 2 from [Shindyalov & Bourne (1998)](https://doi.org/10.1093/protein/11.9.739):
+
+![Alignment path plot](assets/plot.png)
