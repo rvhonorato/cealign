@@ -4,6 +4,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/7a1c7929f01e4b5aa4d9c22bf7c704ee)](https://app.codacy.com/gh/rvhonorato/cealign/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![crates.io](https://img.shields.io/crates/v/cealign.svg)](https://crates.io/crates/cealign)
 [![docs.rs](https://docs.rs/cealign/badge.svg)](https://docs.rs/cealign)
+[![DOI](https://zenodo.org/badge/816861096.svg)](https://doi.org/10.5281/zenodo.18892597)
 
 A Rust implementation of the [Combinatorial Extension (CE) algorithm](https://doi.org/10.1093/protein/11.9.739) for protein structure alignment, available as both a command-line tool and a library.
 
