@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: cealign
+abstract: "A Rust implementation of the Combinatorial Extension (CE) algorithm for protein structure alignment, available as both a command-line tool and a library."
+authors:
+  - family-names: Honorato
+    given-names: Rodrigo V.
+    email: rvhonorato@protonmail.com
+    orcid: https://orcid.org/0000-0001-5267-3002
+version: "0.1.0"
+date-released: "2026-03-06"
+license: 0BSD
+repository-code: https://github.com/rvhonorato/cealign
+url: https://github.com/rvhonorato/cealign
+doi: 10.5281/zenodo.18892597
+keywords:
+  - bioinformatics
+  - structural-biology
+  - structural-alignment
+  - protein-structure
+  - rust
+references:
+  - type: article
+    title: "Protein structure alignment by incremental combinatorial extension (CE) of the optimal path"
+    authors:
+      - family-names: Shindyalov
+        given-names: Ilya N.
+      - family-names: Bourne
+        given-names: Philip E.
+    journal: "Protein Engineering"
+    volume: 11
+    issue: 9
+    start: 739
+    end: 747
+    year: 1998
+    doi: 10.1093/protein/11.9.739
