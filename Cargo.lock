@@ -148,7 +148,6 @@ dependencies = [
  "pdbtbx",
  "plotters",
  "rand",
- "regex",
 ]
 
 [[package]]

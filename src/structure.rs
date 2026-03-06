@@ -281,7 +281,7 @@ pub fn kabsch(P: &[Vector3<f64>], Q: &[Vector3<f64>]) -> Matrix3<f64> {
         .fold(Matrix3::zeros(), |acc, (p, q)| acc + p * q.transpose());
 
     let svd = covariance_matrix.svd(true, true);
-    // TODO: Handle these unwraps
+    // svd(true, true) always computes U and V_t, so these unwraps are safe
     let u = svd.u.unwrap();
     let v_t = svd.v_t.unwrap();
 

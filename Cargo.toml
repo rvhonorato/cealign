@@ -2,7 +2,7 @@
 name = "cealign"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.87"
 license = "0BSD"
 authors = ["Rodrigo V. Honorato <rvhonorato@protonmail.com>"]
 description = "Implementation of the Combinatorial Extension (cealign) algorithm to align protein structures"
@@ -17,7 +17,7 @@ keywords = [
   "cealign",
 ]
 categories = ["science", "command-line-utilities"]
-exclude = ["data/"]
+exclude = ["data/", "debug/", "assets/", ".github/"]
 
 [features]
 plot = ["dep:plotters"]
@@ -39,4 +39,3 @@ nalgebra = "0.34"
 pdbtbx = "0.12"
 plotters = { version = "0.3", optional = true }
 rand = "0.10"
-regex = "1.10"
