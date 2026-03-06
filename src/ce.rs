@@ -440,6 +440,92 @@ mod tests {
     use super::*;
     use crate::structure::Geometry;
 
+    // Build a trivial distance matrix from a list of 1-D coordinates.
+    // Serial numbers are 1-based to match PDB convention.
+    fn make_dm(coords: &[f64]) -> HashMap<usize, HashMap<usize, f64>> {
+        coords
+            .iter()
+            .enumerate()
+            .map(|(i, &x)| {
+                let row = coords
+                    .iter()
+                    .enumerate()
+                    .map(|(j, &y)| (j + 1, (x - y).abs()))
+                    .collect();
+                (i + 1, row)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn test_inter_afp_distance_identical() {
+        // When da == db and both AFPs are at the same position the score is 0
+        let coords: Vec<f64> = (0..10).map(|i| i as f64).collect();
+        let dm = make_dm(&coords);
+        let serials: Vec<usize> = (1..=10).collect();
+        let score = inter_afp_distance(&dm, &dm, &serials, &serials, 0, 0, 3, 3, 4);
+        assert!(score.abs() < 1e-10, "Expected 0, got {score}");
+    }
+
+    #[test]
+    fn test_inter_afp_distance_nonzero() {
+        // Two distinct distance matrices must produce a positive score
+        let coords_a: Vec<f64> = (0..10).map(|i| i as f64).collect();
+        let coords_b: Vec<f64> = (0..10).map(|i| i as f64 * 2.0).collect();
+        let dm_a = make_dm(&coords_a);
+        let dm_b = make_dm(&coords_b);
+        let serials: Vec<usize> = (1..=10).collect();
+        let score = inter_afp_distance(&dm_a, &dm_b, &serials, &serials, 0, 0, 3, 3, 4);
+        assert!(score > 0.0, "Expected positive score, got {score}");
+    }
+
+    #[test]
+    fn test_expand_path_basic() {
+        let coords: Vec<f64> = (1..=8).map(|i| i as f64).collect();
+        let dm = make_dm(&coords);
+        // AFP covers serials 1..=4 on both sides
+        let path = vec![(vec![1usize, 4], vec![1usize, 4])];
+        let expanded = expand_path(path, &dm, &dm);
+        assert_eq!(expanded.len(), 1);
+        assert_eq!(expanded[0].0, vec![1, 2, 3, 4]);
+        assert_eq!(expanded[0].1, vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn test_expand_path_offset_ranges() {
+        let coords: Vec<f64> = (1..=10).map(|i| i as f64).collect();
+        let dm = make_dm(&coords);
+        let path = vec![(vec![2usize, 5], vec![6usize, 9])];
+        let expanded = expand_path(path, &dm, &dm);
+        assert_eq!(expanded[0].0, vec![2, 3, 4, 5]);
+        assert_eq!(expanded[0].1, vec![6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn test_align_self_near_zero_rmsd() {
+        // Aligning a structure against itself should yield a near-zero RMSD
+        let (pdb, _) = pdbtbx::open("data/1crn.pdb").expect("Failed to open data/1crn.pdb");
+        let (_, _, rmsd, _) = align(pdb.clone(), pdb, false);
+        assert!(
+            rmsd < 0.01,
+            "Self-alignment RMSD should be ~0, got {rmsd:.4}"
+        );
+    }
+
+    #[test]
+    fn test_align_always_improves_rmsd() {
+        let (reference, _) = pdbtbx::open("data/1crn.pdb").expect("Failed to open data/1crn.pdb");
+        let (mut mobile, _) =
+            pdbtbx::open("data/1ccm_1.pdb").expect("Failed to open data/1ccm_1.pdb");
+        mobile.randomly_rotate();
+        let rmsd_before = structure::calc_rmsd(&reference, &mobile);
+        let (_, _, rmsd_after, _) = align(mobile, reference, false);
+        assert!(
+            rmsd_after < rmsd_before,
+            "Alignment should improve RMSD: before={rmsd_before:.3}, after={rmsd_after:.3}"
+        );
+    }
+
     // Align 1CRN (crambin, X-ray) against each 1CCM NMR conformation.
     #[test]
     fn test_align_crambin_xray_vs_nmr() {
@@ -457,11 +543,11 @@ mod tests {
         ];
 
         for (path, pymol_rmsd) in conformations {
-            let (reference, _) = pdbtbx::open("data/1crn.pdb")
-                .expect("Failed to open data/1crn.pdb");
+            let (reference, _) =
+                pdbtbx::open("data/1crn.pdb").expect("Failed to open data/1crn.pdb");
 
-            let (mobile, _) = pdbtbx::open(path)
-                .unwrap_or_else(|_| panic!("Failed to open {}", path));
+            let (mobile, _) =
+                pdbtbx::open(path).unwrap_or_else(|_| panic!("Failed to open {}", path));
 
             // Add a random rotation
             let mut mobile = mobile;

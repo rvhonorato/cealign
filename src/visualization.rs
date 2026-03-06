@@ -62,3 +62,29 @@ pub fn plot(
     root.present()?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_plot_single_afp() {
+        let path = vec![(0usize, 0usize)];
+        assert!(plot(&path, 8, 46, 46).is_ok());
+        std::fs::remove_file("plot.png").ok();
+    }
+
+    #[test]
+    fn test_plot_multiple_afps() {
+        // Multiple AFPs exercise both the diagonal segments and the connectors
+        let path = vec![(0, 0), (10, 10), (20, 20)];
+        assert!(plot(&path, 8, 46, 46).is_ok());
+        std::fs::remove_file("plot.png").ok();
+    }
+
+    #[test]
+    fn test_plot_empty_path() {
+        assert!(plot(&[], 8, 46, 46).is_ok());
+        std::fs::remove_file("plot.png").ok();
+    }
+}

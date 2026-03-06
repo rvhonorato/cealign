@@ -1,9 +1,9 @@
 mod ce;
 mod structure;
+mod utils;
 mod visualization;
 use clap::Parser;
 use log::{debug, error, info};
-use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
 use structure::{Geometry, Validations};
@@ -98,14 +98,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if args.output {
-        let mobile_path = Path::new(&args.mobile);
-        let target_path = Path::new(&args.target);
-
-        let mobile_stem = mobile_path.file_stem().unwrap().to_str().unwrap();
-        let target_stem = target_path.file_stem().unwrap().to_str().unwrap();
-
-        let mobile_output = format!("{}_aln.pdb", mobile_stem);
-        let target_output = format!("{}_aln.pdb", target_stem);
+        let mobile_output = utils::aln_filename(&args.mobile);
+        let target_output = utils::aln_filename(&args.target);
 
         let _ = pdbtbx::save_pdb(&pdb_i_aln, &mobile_output, pdbtbx::StrictnessLevel::Strict);
         let _ = pdbtbx::save_pdb(&pdb_j_aln, &target_output, pdbtbx::StrictnessLevel::Strict);

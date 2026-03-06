@@ -281,3 +281,102 @@ pub fn calculate_rotation_matrix(P: &[Vector3<f64>], Q: &[Vector3<f64>]) -> Matr
 
     kabsch(&P_centered, &Q_centered)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_centroid_at_origin() {
+        let points = vec![
+            Vector3::new(1.0, 0.0, 0.0),
+            Vector3::new(-1.0, 0.0, 0.0),
+            Vector3::new(0.0, 2.0, 0.0),
+            Vector3::new(0.0, -2.0, 0.0),
+        ];
+        let c = centroid(&points);
+        assert!(c.norm() < 1e-10);
+    }
+
+    #[test]
+    fn test_centroid_known_value() {
+        let points = vec![
+            Vector3::new(1.0, 2.0, 3.0),
+            Vector3::new(3.0, 4.0, 5.0),
+        ];
+        let c = centroid(&points);
+        assert!((c - Vector3::new(2.0, 3.0, 4.0)).norm() < 1e-10);
+    }
+
+    #[test]
+    fn test_kabsch_identity() {
+        // Identical point sets → rotation matrix should be identity
+        let points = vec![
+            Vector3::new(1.0, 0.0, 0.0),
+            Vector3::new(0.0, 1.0, 0.0),
+            Vector3::new(0.0, 0.0, 1.0),
+            Vector3::new(1.0, 1.0, 1.0),
+        ];
+        let r = kabsch(&points, &points);
+        assert!((r - Matrix3::identity()).norm() < 1e-10);
+    }
+
+    #[test]
+    fn test_kabsch_known_rotation() {
+        // 90° rotation around Z: (x, y, z) → (-y, x, z)
+        let p = vec![
+            Vector3::new(1.0, 0.0, 0.0),
+            Vector3::new(0.0, 1.0, 0.0),
+            Vector3::new(-1.0, 0.0, 0.0),
+            Vector3::new(0.0, -1.0, 0.0),
+        ];
+        let q: Vec<_> = p.iter().map(|v| Vector3::new(-v.y, v.x, v.z)).collect();
+        let r = kabsch(&p, &q);
+        for (pi, qi) in p.iter().zip(q.iter()) {
+            assert!((r * pi - qi).norm() < 1e-10);
+        }
+    }
+
+    #[test]
+    fn test_calculate_transformation_pure_translation() {
+        // P is Q shifted by a fixed offset; aligned RMSD should be ~0
+        let q = vec![
+            Vector3::new(0.0, 0.0, 0.0),
+            Vector3::new(1.0, 0.0, 0.0),
+            Vector3::new(0.0, 1.0, 0.0),
+            Vector3::new(1.0, 1.0, 1.0),
+        ];
+        let offset = Vector3::new(3.0, -1.0, 2.0);
+        let p: Vec<_> = q.iter().map(|v| v + offset).collect();
+
+        let (rot, trans) = calculate_transformation(&p, &q);
+        for (pi, qi) in p.iter().zip(q.iter()) {
+            assert!((rot * pi + trans - qi).norm() < 1e-9);
+        }
+    }
+
+    #[test]
+    fn test_calc_s_identical_structures() {
+        // Identical distance matrices → all S scores should be 0
+        let coords: Vec<(f64, f64, f64)> = vec![
+            (0.0, 0.0, 0.0),
+            (1.0, 0.0, 0.0),
+            (2.0, 0.0, 0.0),
+            (3.0, 0.0, 0.0),
+            (4.0, 0.0, 0.0),
+        ];
+        let mut dm: HashMap<usize, HashMap<usize, f64>> = HashMap::new();
+        for (i, &(x1, y1, z1)) in coords.iter().enumerate() {
+            let mut row = HashMap::new();
+            for (j, &(x2, y2, z2)) in coords.iter().enumerate() {
+                let d = ((x2 - x1).powi(2) + (y2 - y1).powi(2) + (z2 - z1).powi(2)).sqrt();
+                row.insert(j + 1, d);
+            }
+            dm.insert(i + 1, row);
+        }
+        let s = calc_s(&dm, &dm, 3);
+        for &score in s.values() {
+            assert!(score.abs() < 1e-10, "Expected 0 for identical structures, got {score}");
+        }
+    }
+}
