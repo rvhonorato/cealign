@@ -169,9 +169,9 @@ Expected output:
 
 152 residues are aligned between the two proteins despite their very low sequence identity — CE identified the shared integrase-like core and reports RMSD only over those structurally conserved residues.
 
-| Superimposed | 1BCO (Mu transposase) | 1C0M chain B (RSV integrase) |
+| 1BCO (Mu transposase) | 1C0M chain B (RSV integrase) | Superimposed |
 |:---:|:---:|:---:|
-| ![Superimposed alignment](https://raw.githubusercontent.com/rvhonorato/cealign/refs/heads/main/assets/aln_1.png) | ![1BCO](https://raw.githubusercontent.com/rvhonorato/cealign/refs/heads/main/assets/aln_2.png) | ![1C0M chain B](https://raw.githubusercontent.com/rvhonorato/cealign/refs/heads/main/assets/aln_3.png) |
+| ![1BCO](https://raw.githubusercontent.com/rvhonorato/cealign/refs/heads/main/assets/aln_2.png) | ![1C0M chain B](https://raw.githubusercontent.com/rvhonorato/cealign/refs/heads/main/assets/aln_3.png) | ![Superimposed alignment](https://raw.githubusercontent.com/rvhonorato/cealign/refs/heads/main/assets/aln_1.png) |
 
 ## Limitations
 
