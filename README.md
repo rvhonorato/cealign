@@ -2,51 +2,20 @@
 
 A command-line application implementing the [Combinatorial Extension Algorithm](https://doi.org/10.1093/protein/11.9.739) (`cealign`) for protein alignment, written in Rust.
 
-## Project Status
-
-⚠️ **Under Active Development** - This project is currently in development and **not** yet ready for production use.
-
 ## Description
 
 `cealign` is a command-line tool that uses the Combinatorial Extension (CE) algorithm to align two protein structures. The CE algorithm is known for its effectiveness in structural alignment of proteins, especially when dealing with proteins that have low sequence similarity but similar structural features.
 
-> There is another implementation of this algorithm is available in the widely used molecular visualizer [PyMol](https://pymolwiki.org/index.php/Cealign)
+## Implementations
+
+This algorithm is also implemented in [PyMol](https://pymolwiki.org/index.php/Cealign) and in [biopython](https://biopython.org/docs/dev/api/Bio.PDB.cealign.html) via [`Bio.PDB.cealign`].
+
 
 ## Installation
 
-```bash
-git clone https://github.com/rvhonorato/cealign && cd cealign
-cargo install --path .
-```
+_placeholder_
 
 ## Usage
 
-```text
-$ cealign -m data/2oob_A.pdb -t data/2oob_B.pdb --randomize
-[2024-07-25T14:12:22Z INFO  cealign] Starting protein structure alignment
-[2024-07-25T14:12:22Z WARN  cealign] Randomly rotating structures for development purposes
-[2024-07-25T14:12:22Z INFO  cealign::ce] Initial RMSD (full): 6.948
-[2024-07-25T14:12:22Z INFO  cealign::ce] Initial RMSD (fragment): 6.954
-[2024-07-25T14:12:22Z INFO  cealign::ce] Final RMSD (fragment): 5.794
-[2024-07-25T14:12:22Z INFO  cealign::ce] Final RMSD (full): 3.967
-[2024-07-25T14:12:22Z INFO  cealign] Alignment complete, took: 17.044962ms
-[2024-07-25T14:12:22Z INFO  cealign] Alignment process completed successfully
-```
+_placeholder_
 
-```text
-$ cealign -h
-Usage: cealign [OPTIONS] -m <MOBILE> -t <TARGET>
-
-Options:
-  -m <MOBILE>      Path to the mobile structure
-  -t <TARGET>      Path to the target structure
-      --output     Save aligned structures as PDB files; they will be save in the same directory as `_aln.pdb`
-  -v, --verbose    Increase output verbosity
-      --randomize  Randomly rotate both the mobile and the target for developlment/debug purposes
-  -h, --help       Print help
-  -V, --version    Print version
-```
-
-## Features
-
-_Coming Soon_
