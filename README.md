@@ -11,7 +11,7 @@ A command-line application implementing the [Combinatorial Extension Algorithm](
 
 ## Implementations
 
-This algorithm is also implemented in [PyMol](https://pymolwiki.org/index.php/Cealign) and in [biopython](https://biopython.org/docs/dev/api/Bio.PDB.cealign.html) via [`Bio.PDB.cealign`].
+This algorithm is also implemented in [PyMol](https://pymolwiki.org/index.php/Cealign) and in [biopython](https://biopython.org/docs/dev/api/Bio.PDB.cealign.html) via `Bio.PDB.cealign`.
 
 
 ## Installation
