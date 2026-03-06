@@ -39,6 +39,7 @@ struct Args {
     )]
     randomize: bool,
 
+    #[cfg(feature = "plot")]
     #[arg(
         short = 'p',
         long = "plot",
@@ -85,13 +86,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         pdb_j.randomly_rotate();
     }
 
+    #[cfg(feature = "plot")]
+    let plot = args.plot;
+    #[cfg(not(feature = "plot"))]
+    let plot = false;
+
     let start = Instant::now();
-    let (pdb_i_aln, pdb_j_aln, aligned_rmsd, _) = ce::align(pdb_i, pdb_j, args.plot);
+    let (pdb_i_aln, pdb_j_aln, aligned_rmsd, _) = ce::align(pdb_i, pdb_j, plot);
     let _ = start.elapsed();
 
     println!("{:.3}", aligned_rmsd);
 
-    if args.plot {
+    #[cfg(feature = "plot")]
+    if plot {
         println!("Saved: plot.png");
     }
 

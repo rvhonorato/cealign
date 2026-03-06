@@ -1,5 +1,6 @@
 use crate::structure;
 use crate::structure::Geometry;
+#[cfg(feature = "plot")]
 use crate::visualization;
 use log::{debug, info};
 use std::collections::{HashMap, HashSet};
@@ -287,6 +288,7 @@ fn calculate_alignment_path(
     // RMSD after Kabsch superposition — mirrors the PyMOL Python wrapper that
     // iterates pathBuffer and selects the lowest-RMSD solution.
     let mut best_expanded: Option<Vec<(Vec<usize>, Vec<usize>)>> = None;
+    #[cfg(feature = "plot")]
     let mut best_index_path: Option<Vec<(usize, usize)>> = None;
     let mut best_rmsd = f64::MAX;
 
@@ -328,7 +330,10 @@ fn calculate_alignment_path(
         if rmsd < best_rmsd {
             best_rmsd = rmsd;
             best_expanded = Some(expanded);
-            best_index_path = Some(path.clone());
+            #[cfg(feature = "plot")]
+            {
+                best_index_path = Some(path.clone());
+            }
         }
     }
 
@@ -338,6 +343,7 @@ fn calculate_alignment_path(
         .for_each(|(a, b)| debug!("Best AFP: {:?} -> {:?}", a, b));
 
     // Generate alignment path plot (Figure 2 style from Shindyalov & Bourne 1998)
+    #[cfg(feature = "plot")]
     if plot {
         if let Some(ref idx_path) = best_index_path {
             if let Err(e) =
@@ -347,6 +353,8 @@ fn calculate_alignment_path(
             }
         }
     }
+    #[cfg(not(feature = "plot"))]
+    let _ = plot;
 
     result
 }

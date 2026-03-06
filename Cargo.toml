@@ -17,7 +17,10 @@ keywords = [
   "cealign",
 ]
 categories = ["science", "command-line-utilities"]
-exclude = ["data/", "debug/", ".github/"]
+exclude = ["data/"]
+
+[features]
+plot = ["dep:plotters"]
 
 
 [lib]
@@ -34,6 +37,6 @@ env_logger = "0.11"
 log = "0.4"
 nalgebra = "0.34"
 pdbtbx = "0.12"
-plotters = "0.3"
+plotters = { version = "0.3", optional = true }
 rand = "0.10"
 regex = "1.10"
