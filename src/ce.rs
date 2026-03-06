@@ -457,10 +457,10 @@ mod tests {
         ];
 
         for (path, pymol_rmsd) in conformations {
-            let (reference, _) = pdbtbx::open("data/1crn.pdb", pdbtbx::StrictnessLevel::Medium)
+            let (reference, _) = pdbtbx::open("data/1crn.pdb")
                 .expect("Failed to open data/1crn.pdb");
 
-            let (mobile, _) = pdbtbx::open(path, pdbtbx::StrictnessLevel::Medium)
+            let (mobile, _) = pdbtbx::open(path)
                 .unwrap_or_else(|_| panic!("Failed to open {}", path));
 
             // Add a random rotation

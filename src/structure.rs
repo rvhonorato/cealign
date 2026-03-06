@@ -1,6 +1,6 @@
 use log::{debug, error};
 use nalgebra::{Matrix3, Vector3};
-use rand::Rng;
+use rand::RngExt;
 use std::collections::HashMap;
 use std::process::exit;
 
@@ -36,12 +36,12 @@ impl Geometry for pdbtbx::PDB {
     }
 
     fn randomly_rotate(&mut self) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Generate a random U matrix
-        let angle_x = rng.gen_range(0.0..=2.0 * std::f64::consts::PI);
-        let angle_y = rng.gen_range(0.0..=2.0 * std::f64::consts::PI);
-        let angle_z = rng.gen_range(0.0..=2.0 * std::f64::consts::PI);
+        let angle_x = rng.random_range(0.0..=2.0 * std::f64::consts::PI);
+        let angle_y = rng.random_range(0.0..=2.0 * std::f64::consts::PI);
+        let angle_z = rng.random_range(0.0..=2.0 * std::f64::consts::PI);
 
         let rot_x = Matrix3::new(
             1.0,

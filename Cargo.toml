@@ -7,17 +7,22 @@ authors = ["Rodrigo V. Honorato <rvhonorato@protonmail.com>"]
 description = "Implementation of the Combinatorial Extension (cealign) algorithm to align protein structures"
 repository = "https://github.com/rvhonorato/cealign"
 readme = "README.md"
-keywords = []
+keywords = [
+  "bioinformatics",
+  "protein",
+  "structure",
+  "alignment",
+  "computational-biology",
+]
 categories = []
 
 
 [dependencies]
-clap = { version = "4.0", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
 env_logger = "0.11"
 log = "0.4"
-nalgebra = "0.33"
-pdbtbx = "0.11"
-regex = "1.10"
-# FIXME: Move this deps into a different profile
+nalgebra = "0.34"
+pdbtbx = "0.12"
 plotters = "0.3"
-rand = "0.8"
+rand = "0.10"
+regex = "1.10"

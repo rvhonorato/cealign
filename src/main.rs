@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     }
 
-    let mut pdb_i = match pdbtbx::open(&args.mobile, pdbtbx::StrictnessLevel::Medium) {
+    let mut pdb_i = match pdbtbx::open(&args.mobile) {
         Ok((pdb, _warnings)) => pdb,
         Err(e) => {
             error!("Error opening PDB file {:?}: {:?}", args.mobile, e);
@@ -68,7 +68,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let mut pdb_j = match pdbtbx::open(&args.target, pdbtbx::StrictnessLevel::Medium) {
+    let mut pdb_j = match pdbtbx::open(&args.target) {
         Ok((pdb, _warnings)) => pdb,
         Err(e) => {
             error!("Error opening PDB file {:?}: {:?}", args.target, e);
