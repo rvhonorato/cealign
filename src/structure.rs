@@ -300,10 +300,7 @@ mod tests {
 
     #[test]
     fn test_centroid_known_value() {
-        let points = vec![
-            Vector3::new(1.0, 2.0, 3.0),
-            Vector3::new(3.0, 4.0, 5.0),
-        ];
+        let points = vec![Vector3::new(1.0, 2.0, 3.0), Vector3::new(3.0, 4.0, 5.0)];
         let c = centroid(&points);
         assert!((c - Vector3::new(2.0, 3.0, 4.0)).norm() < 1e-10);
     }
@@ -376,7 +373,10 @@ mod tests {
         }
         let s = calc_s(&dm, &dm, 3);
         for &score in s.values() {
-            assert!(score.abs() < 1e-10, "Expected 0 for identical structures, got {score}");
+            assert!(
+                score.abs() < 1e-10,
+                "Expected 0 for identical structures, got {score}"
+            );
         }
     }
 }
